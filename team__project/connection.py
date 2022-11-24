@@ -1,6 +1,6 @@
 import pymysql
 
-mode = int(input('0 : 데이터베이스 생성\n1 : 테이블 생성\n2 : 종료\n3 : 테이블 삭제\n'))
+mode = int(input('0 : 데이터베이스 생성\n1 : 비밀번호 저장 테이블 생성\n2 : 종료\n3 : 테이블 삭제\n5 : 훈련 데이터 테이블 생성\n'))
 
 while mode != 2:
     # db 생성
@@ -38,6 +38,20 @@ while mode != 2:
 
         sql = '''DROP TABLE user'''
 
+        cursor.execute(sql)
+        conn.commit()
+        conn.close()
+
+    if mode == 5:
+        conn = pymysql.connect(host='localhost', user='root', password='1234', db='save_password', charset='utf8')
+        cursor = conn.cursor()
+
+        sql = '''CREATE TABLE train ( 
+                id int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, 
+                train_data LONGTEXT, 
+                train_label LONGTEXT 
+                )
+                '''
         cursor.execute(sql)
         conn.commit()
         conn.close()

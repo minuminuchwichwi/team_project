@@ -1,16 +1,11 @@
-import librosa
+import time, librosa, wave, pyaudio, os, pymysql
 import librosa.display
-import numpy as np, cv2
+import numpy as np
 import matplotlib.pyplot as plt
-import wave
-import pyaudio
-import librosa
-import os
 import pandas as pd
 from sklearn import metrics
-from sklearn.linear_model import LogisticRegression #텐서플로우로 바꿀예정
+from sklearn.linear_model import LogisticRegression
 import speech_recognition as speech
-import pymysql
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
@@ -18,44 +13,7 @@ CHANNELS = 1
 RATE = 44100
 RECORD_SECONDS = 3
 WAVE_OUTPUT_FILENAME = "output.wav"
-
-DATA_PATH = "./password/"
-train_data=[]#train_date 저장할 공간
-train_label=[]#train_label 저장할 공간
-test_data=[]#train_date 저장할 공간
-test_label=[]#train_label 저장할 공간
-
-pass_score = 90#비밀번호 인증 기준 90%
-
-def load_wave_generator(path):
-    batch_waves = []
-    labels = []
-    # input_width=CHUNK*6 # wow, big!!
-    folders = os.listdir(path)
-    # while True:
-    # print("loaded batch of %d files" % len(files))
-    for folder in folders:
-        if not os.path.isdir(path): continue  # 폴더가 아니면 continue
-        files = os.listdir(path + "/" + folder)
-        print("Foldername :", folder, "-", len(files))  # 폴더 이름과 그 폴더에 속하는 파일 갯수 출력
-        for wav in files:
-            if not wav.endswith(".wav"):
-                continue
-            else:
-                global train_data, train_label  # 전역변수를 사용하겠다.
-                print("Filename :", wav)  # .wav 파일이 아니면 continue
-                y, sr = librosa.load(path + "/" + folder + "/" + wav)
-                mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, hop_length=int(sr * 0.01), n_fft=int(sr * 0.02)).T
-                if (len(train_data) == 0):
-                    train_data = mfcc
-                    train_label = np.full(len(mfcc), int(folder))
-                else:
-                    train_data = np.concatenate((train_data, mfcc), axis=0)
-                    train_label = np.concatenate((train_label, np.full(len(mfcc), int(folder))), axis=0)
-                    print("mfcc :", mfcc.shape)
-
-
-load_wave_generator(DATA_PATH)
+pass_score = 80 #비밀번호 인증 기준 80%
 
 p = pyaudio.PyAudio() # 오디오 객체 생성
 
@@ -65,7 +23,8 @@ stream = p.open(format=FORMAT, # 16비트 포맷
                 input=True,
                 frames_per_buffer=CHUNK) # CHUNK만큼 버퍼가 쌓인다.
 
-print("Start to record the audio.")
+print("음성인식 도어락 시스템")
+print("비밀번호를 말하세요..")
 
 frames = [] # 음성 데이터를 채우는 공간
 
@@ -73,8 +32,6 @@ for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
     #지정한  100ms를 몇번 호출할 것인지 10 * 3 = 30  100ms 버퍼 30번채움 = 3초
     data = stream.read(CHUNK)
     frames.append(data)
-
-print("Recording is finished.")
 
 stream.stop_stream() # 스트림닫기
 stream.close() # 스트림 종료
@@ -93,16 +50,9 @@ spf = wave.open(WAVE_OUTPUT_FILENAME,'r')
 signal = spf.readframes(-1)
 signal = np.frombuffer(signal, dtype=np.int16)
 
-#시간 흐름에 따른 그래프를 그리기 위한 부분
-Time = np.linspace(0, len(signal)/RATE, num=len(signal))
-# plt.figure(1)
-# plt.title('Voice Signal Wave...')
-# #plt.plot(signal) // 음성 데이터의 그래프
-# plt.plot(Time, signal)
-# plt.show()
-
-print("train_data.shape :", train_data.shape, type(train_data))
-print("train_label.shape :", train_label.shape, type(train_label))
+# 훈련된 데이터를 불러오기 위해 set_password에서 저장한 numpy array file을 불러옴
+train_data = np.load('password/train_data.npy')
+train_label = np.load('password/train_label.npy')
 clf = LogisticRegression(solver='lbfgs', max_iter=100)
 clf.fit(train_data, train_label)
 

@@ -1,11 +1,12 @@
-import speech_recognition as speech, librosa
-import numpy as np, cv2
+import glob
+import time, librosa, wave, pyaudio, os, pymysql
+import librosa.display
+import numpy as np
 import matplotlib.pyplot as plt
-import wave
-import pyaudio
-import librosa
-import time
-import pymysql
+import pandas as pd
+from sklearn import metrics
+from sklearn.linear_model import LogisticRegression
+import speech_recognition as speech
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
@@ -14,14 +15,57 @@ RATE = 44100
 RECORD_SECONDS = 3
 k = 0  # 음성녹음의 초기 횟수
 
+DATA_PATH = "./password/"
+train_data=[]#train_date 저장할 공간
+train_label=[]#train_label 저장할 공간
+test_data=[]#train_date 저장할 공간
+test_label=[]#train_label 저장할 공간
+
+# 새로운 사용자의 폴더가 없으면 폴더 생성
+def createDirectory(directory):
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+        print("Error: Failed to create the directory.")
+def load_wave_generator(path):
+    batch_waves = []
+    labels = []
+    # input_width=CHUNK*6 # wow, big!!
+    folders = os.listdir(path)
+    # while True:
+    # print("loaded batch of %d files" % len(files))
+    for folder in folders:
+        if not os.path.isdir(path): continue  # 폴더가 아니면 continue
+        files = os.listdir(path + "/" + folder)
+        print("Foldername :", folder, "-", len(files))  # 폴더 이름과 그 폴더에 속하는 파일 갯수 출력
+        for wav in files:
+            if not wav.endswith(".wav"):
+                continue
+            else:
+                global train_data, train_label  # 전역변수를 사용하겠다.
+                print("Filename :", wav)  # .wav 파일이 아니면 continue
+                y, sr = librosa.load(path + "/" + folder + "/" + wav)
+                mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, hop_length=int(sr * 0.01), n_fft=int(sr * 0.02)).T
+                if (len(train_data) == 0):
+                    train_data = mfcc
+                    train_label = np.full(len(mfcc), int(folder))
+                else:
+                    train_data = np.concatenate((train_data, mfcc), axis=0)
+                    train_label = np.concatenate((train_label, np.full(len(mfcc), int(folder))), axis=0)
+                    print("mfcc :", mfcc.shape)
+
 print('입력하실 비밀번호를 10번 반복하여 녹음합니다.')
 name = input('name : ')
 if "min" in name:
     folder = '0'
+    createDirectory(DATA_PATH + folder)
 elif "song" in name:
     folder = '1'
+    createDirectory(DATA_PATH + folder)
 else:
-    folder = '2'
+    folder = str(len(os.listdir(DATA_PATH)) + 1)
+    createDirectory(DATA_PATH + folder)
 
 while k < 10:
     time.sleep(1)
@@ -108,3 +152,13 @@ with conn:
         result = cur.fetchall()
         for data in result:
             print(data)
+
+# npy파일이 존재한다면 덮어쓰기에 관한 오류가 발생하여 미리 npy파일을 지움.
+for f in glob.glob('password/*.npy'):
+    os.remove(f)
+
+load_wave_generator(DATA_PATH)
+
+# 훈련된 데이터는 numpy array로 저장되기에 .npz 파일로 저장
+np.save('password/train_data.npy', train_data)
+np.save('password/train_label.npy', train_label)
