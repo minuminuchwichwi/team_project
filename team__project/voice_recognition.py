@@ -1,4 +1,4 @@
-import time, librosa, wave, pyaudio, os, pymysql
+import librosa, wave, pyaudio, pymysql
 import librosa.display
 import numpy as np
 import matplotlib.pyplot as plt
