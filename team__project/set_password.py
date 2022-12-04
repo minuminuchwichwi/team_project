@@ -2,10 +2,6 @@ import glob
 import time, librosa, wave, pyaudio, os, pymysql
 import librosa.display
 import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-from sklearn import metrics
-from sklearn.linear_model import LogisticRegression
 import speech_recognition as speech
 
 CHUNK = 1024

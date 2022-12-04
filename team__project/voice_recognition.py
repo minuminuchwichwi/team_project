@@ -57,18 +57,18 @@ clf = LogisticRegression(solver='lbfgs', max_iter=100)
 clf.fit(train_data, train_label)
 
 y, sr = librosa.load(WAVE_OUTPUT_FILENAME)  # y=signal, sr=sample_rate
-plt.figure(figsize=(14, 5))
-librosa.display.waveshow(y, sr)
-plt.xlabel("Time (s)")
-plt.ylabel("Amplitude")
-plt.title("Waveform")
-plt.show()
+# plt.figure(figsize=(14, 5))
+# librosa.display.waveshow(y, sr)
+# plt.xlabel("Time (s)")
+# plt.ylabel("Amplitude")
+# plt.title("Waveform")
+# plt.show()
 mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, hop_length=int(sr * 0.01), n_fft=int(sr * 0.02)).T
 
 y_test_estimated = clf.predict(mfcc)
 print(y_test_estimated)
 test_label = np.full(len(mfcc), 0)
-print(test_label)
+#print(test_label)
 
 ac_score = metrics.accuracy_score(y_test_estimated, test_label)
 print("정답률 =", ac_score)
