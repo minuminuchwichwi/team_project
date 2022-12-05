@@ -25,12 +25,7 @@ def createDirectory(directory):
     except OSError:
         print("Error: Failed to create the directory.")
 def load_wave_generator(path):
-    batch_waves = []
-    labels = []
-    # input_width=CHUNK*6 # wow, big!!
     folders = os.listdir(path)
-    # while True:
-    # print("loaded batch of %d files" % len(files))
     for folder in folders:
         if not os.path.isdir(path): continue  # 폴더가 아니면 continue
         files = os.listdir(path + "/" + folder)
